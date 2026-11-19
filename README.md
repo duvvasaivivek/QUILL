@@ -27,6 +27,18 @@ QUILL is an order-to-audit system for a small food manufacturer. It links field 
 
 The health check is available at `http://localhost:8000/health/`.
 
+## Initialise application data
+
+After applying migrations, create the required role groups and load the mandatory benchmark master data:
+
+```powershell
+python manage.py provision_roles
+python manage.py seed_benchmark_masters
+python manage.py createsuperuser
+```
+
+Roles are represented by Django Groups: Salesman, Admin, Production Supervisor, Auditor, and Owner. The administrator assigns these groups to users through Django Admin.
+
 ### Run without Docker
 
 You need a local PostgreSQL database matching the values in `.env`.
@@ -44,7 +56,8 @@ python manage.py runserver
 
 ```powershell
 python manage.py check
-pytest
+$env:USE_SQLITE_FOR_TESTS = "true"
+python manage.py test
 ```
 
 ## Delivery plan
@@ -53,4 +66,4 @@ The complete phasewise plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.m
 
 ## Current status
 
-Phase 0 is complete. The repository contains the Django project baseline, PostgreSQL configuration, Docker Compose setup, foundational apps, static/template configuration, a health endpoint, and a basic test.
+Phases 0 and 1 are complete. The repository contains the Django project baseline, PostgreSQL configuration, Docker Compose setup, custom user model, RBAC role groups, validated master-data models, Django Admin registrations, benchmark master-data seeding, static/template configuration, a health endpoint, and automated tests.
