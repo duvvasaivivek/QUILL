@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local configuration
+.venv/
+venv/
+.env
+
+# Django
+*.log
+db.sqlite3
+staticfiles/*
+!staticfiles/.gitkeep
+media/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build artefacts
+dist/
+build/
+*.egg-info/
+
+IMPLEMENTATION_PLAN.md
+.agents/
+.codex/
+.cursor/
+.ai/
+AI_NOTES.md
+PROMPTS.md
+*.canvas.tsx
