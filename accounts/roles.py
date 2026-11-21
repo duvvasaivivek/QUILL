@@ -5,6 +5,7 @@ from __future__ import annotations
 from enum import Enum
 
 from django.contrib.auth.models import Group, Permission
+from django.db import models
 
 
 class Role(str, Enum):
@@ -40,6 +41,8 @@ ROLE_PERMISSION_CODENAMES = {
     Role.OWNER: MASTER_VIEW_PERMISSIONS,
 }
 
+INVENTORY_VIEW_PERMISSIONS = {"view_stockmovement", "view_openingbalance", "view_purchasereceipt"}
+
 
 def role_names() -> tuple[str, ...]:
     return tuple(role.value for role in Role)
@@ -52,7 +55,7 @@ def provision_role_groups() -> dict[str, bool]:
     introduce new models and permissions.
     """
     created: dict[str, bool] = {}
-    all_master_permissions = Permission.objects.filter(content_type__app_label="masters")
+    all_master_permissions = Permission.objects.filter(content_type__app_label__in=("masters", "inventory"))
 
     for role in Role:
         group, was_created = Group.objects.get_or_create(name=role.value)
@@ -61,9 +64,10 @@ def provision_role_groups() -> dict[str, bool]:
             group.permissions.add(*all_master_permissions)
             continue
 
+        inventory_codes = INVENTORY_VIEW_PERMISSIONS if role is not Role.SALESMAN else set()
         permissions = Permission.objects.filter(
-            content_type__app_label="masters",
-            codename__in=ROLE_PERMISSION_CODENAMES[role],
+            models.Q(content_type__app_label="masters", codename__in=ROLE_PERMISSION_CODENAMES[role])
+            | models.Q(content_type__app_label="inventory", codename__in=inventory_codes)
         )
         group.permissions.add(*permissions)
 

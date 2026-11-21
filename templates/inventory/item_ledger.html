@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ item.name }} stock ledger</h1>
+<p><a href="{% url 'stock_summary' %}">Stock summary</a></p>
+<table class="table table-striped">
+  <thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Quantity ({{ item.base_unit.code }})</th><th>Unit cost</th><th>Value</th><th>Posted by</th></tr></thead>
+  <tbody>{% for movement in movements %}
+  <tr><td>{{ movement.created_at }}</td><td>{{ movement.get_movement_type_display }}</td><td>{% if movement.opening_line_id %}<a href="{% url 'admin:inventory_openingbalance_change' movement.opening_line.document_id %}">{{ movement.source_reference }}</a>{% elif movement.receipt_line_id %}<a href="{% url 'admin:inventory_purchasereceipt_change' movement.receipt_line.document_id %}">{{ movement.source_reference }}</a>{% else %}{{ movement.source_reference }}{% endif %}</td><td>{{ movement.quantity }}</td><td>{{ movement.unit_cost }}</td><td>{{ movement.value }}</td><td>{{ movement.created_by }}</td></tr>
+  {% endfor %}</tbody>
+</table>
+{% endblock %}

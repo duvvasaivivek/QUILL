@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Stock summary</h1>
+<table class="table table-striped">
+  <thead><tr><th>Item</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Value</th></tr></thead>
+  <tbody>{% for item in items %}
+  <tr><td><a href="{% url 'item_ledger' item.pk %}">{{ item.sku }} — {{ item.name }}</a></td><td>{{ item.get_category_display }}</td><td>{{ item.stock_quantity|default_if_none:'0' }}</td><td>{{ item.base_unit.code }}</td><td>{{ item.stock_value|default_if_none:'0' }}</td></tr>
+  {% endfor %}</tbody>
+</table>
+{% endblock %}

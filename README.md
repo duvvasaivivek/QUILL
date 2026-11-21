@@ -62,8 +62,10 @@ python manage.py test
 
 ## Delivery plan
 
-The complete phasewise plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). The immediate next stage is Phase 1: roles, permissions, and master data.
+The complete phasewise plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). The immediate next stage is Phase 3: BOM production, variance, and costing.
 
 ## Current status
 
-Phases 0 and 1 are complete. The repository contains the Django project baseline, PostgreSQL configuration, Docker Compose setup, custom user model, RBAC role groups, validated master-data models, Django Admin registrations, benchmark master-data seeding, static/template configuration, a health endpoint, and automated tests.
+Phases 0 through 2 are complete. The repository contains the Django baseline, PostgreSQL and Docker Compose configuration, role groups, validated master data, benchmark master-data seeding, and an inventory ledger. Draft opening balances and purchase receipts can be created in Django Admin and posted with the "Post selected draft documents" action. Posting creates immutable stock movements in one transaction. The stock summary is at `/stock/`, with item ledgers linked from it. Quantities and values are derived from movements; weighted-average cost is available through `inventory.services.average_unit_cost`.
+
+After migrating, run `python manage.py provision_roles` again to grant inventory permissions to the existing groups. The benchmark opening balance of 100 kg flour at INR 20/kg followed by a 60 kg purchase at INR 30/kg results in 160 kg, INR 3,800 stock value, and INR 23.75/kg weighted-average cost.
