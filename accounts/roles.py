@@ -26,6 +26,8 @@ MASTER_VIEW_PERMISSIONS = {
     "view_pricelistitem",
     "view_bom",
     "view_bomline",
+    "view_productionrun",
+    "view_productionconsumption",
 }
 
 ROLE_PERMISSION_CODENAMES = {
@@ -36,7 +38,7 @@ ROLE_PERMISSION_CODENAMES = {
         "view_pricelistitem",
     },
     Role.ADMIN: set(),  # Populated with all master-data permissions below.
-    Role.PRODUCTION_SUPERVISOR: MASTER_VIEW_PERMISSIONS | {"change_bom", "change_bomline"},
+    Role.PRODUCTION_SUPERVISOR: MASTER_VIEW_PERMISSIONS | {"change_bom", "change_bomline", "add_productionrun", "view_productionrun", "view_productionconsumption", "change_productionrun", "change_productionconsumption"},
     Role.AUDITOR: MASTER_VIEW_PERMISSIONS,
     Role.OWNER: MASTER_VIEW_PERMISSIONS,
 }
