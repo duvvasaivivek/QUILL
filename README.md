@@ -62,7 +62,11 @@ python manage.py test
 
 ## Delivery plan
 
-The complete phasewise plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). The immediate next stage is Phase 3: BOM production, variance, and costing.
+The complete phasewise plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Phase 4 adds sales orders, GST invoices, dispatch, and payments; Phase 5 adds reports.
+
+## Sales workflow
+
+Open `/login/` to sign in, then `/orders/` to submit a customer order with multiple products. Salesmen see their own orders and customer sales totals. Admin-role users can edit submitted quantities, approve and invoice, reject, dispatch, and record payments. Approval and dispatch both check stock. Approval snapshots customer, price, HSN, and tax details into a financial-year-numbered invoice. Tamil Nadu customers receive CGST/SGST; other states receive IGST. Invoice PDF downloads are available from order details. Payments cannot exceed outstanding balances.
 
 ## Current status
 

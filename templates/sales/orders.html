@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Sales orders</h1>
+<h2>Customer sales</h2>{% for row in customer_sales %}<p>{{ row.customer_snapshot__name }}: INR {{ row.sales }}</p>{% empty %}<p>No invoiced sales yet.</p>{% endfor %}
+<form method="post">{% csrf_token %}{{ form.as_p }}{{ lines.management_form }}
+{% for line in lines %}<fieldset class="border p-2 mb-2">{{ line.as_p }}</fieldset>{% endfor %}<button class="btn btn-primary">Submit order</button></form>
+<h2 class="mt-4">Orders</h2>{% for order in orders %}<p><a href="{% url 'sales_order' order.pk %}">Order {{ order.pk }} — {{ order.customer }} — {{ order.status }}</a></p>{% empty %}<p>No orders yet.</p>{% endfor %}
+{% endblock %}

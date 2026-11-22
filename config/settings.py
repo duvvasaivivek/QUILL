@@ -112,7 +112,8 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
-LOGIN_URL = "admin:login"
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "sales_orders"
 
 # Values used by the production module in Phase 3. Keep calculations decimal-based.
 DEFAULT_VARIANCE_TOLERANCE_PERCENT = "3.00"

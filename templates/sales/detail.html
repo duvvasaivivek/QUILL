@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Order {{ order.pk }}</h1><p>{{ order.customer }} — {{ order.status }}</p>
+{% if error %}<p class="alert alert-danger">{{ error }}</p>{% endif %}
+{% for line in order.lines.all %}<p>{{ line.product }}: {{ line.quantity }} at INR {{ line.unit_price }}</p>{% endfor %}
+{% if can_manage and order.status == 'SUBMITTED' %}<form method="post">{% csrf_token %}{% for line in order.lines.all %}<label>{{ line.product }} <input type="number" step="0.001" min="0.001" name="quantity_{{ line.pk }}" value="{{ line.quantity }}"></label>{% endfor %}<button name="action" value="edit">Save quantities</button></form>{% endif %}
+{% if can_manage and order.status == 'SUBMITTED' %}<form method="post">{% csrf_token %}<button name="action" value="approve">Approve and invoice</button> <button name="action" value="reject">Reject</button></form>{% endif %}
+{% if order.invoice %}<h2>{{ order.invoice.number }}</h2><p>Total INR {{ order.invoice.total }} — Outstanding INR {{ order.invoice.outstanding }}</p><a href="{% url 'invoice_pdf' order.invoice.pk %}">Download invoice PDF</a>
+{% if can_manage %}{% if not order.invoice.dispatched_at %}<form method="post">{% csrf_token %}<button name="action" value="dispatch">Record dispatch</button></form>{% else %}<p>Dispatched {{ order.invoice.dispatched_at }}</p>{% endif %}
+<form method="post">{% csrf_token %}{{ payment_form.as_p }}<button name="action" value="pay">Record payment</button></form>{% endif %}
+{% endif %}<p><a href="{% url 'sales_orders' %}">All orders</a></p>{% endblock %}

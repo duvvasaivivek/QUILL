@@ -57,7 +57,7 @@ def provision_role_groups() -> dict[str, bool]:
     introduce new models and permissions.
     """
     created: dict[str, bool] = {}
-    all_master_permissions = Permission.objects.filter(content_type__app_label__in=("masters", "inventory"))
+    all_master_permissions = Permission.objects.filter(content_type__app_label__in=("masters", "inventory", "production", "sales"))
 
     for role in Role:
         group, was_created = Group.objects.get_or_create(name=role.value)
@@ -72,5 +72,7 @@ def provision_role_groups() -> dict[str, bool]:
             | models.Q(content_type__app_label="inventory", codename__in=inventory_codes)
         )
         group.permissions.add(*permissions)
+        if role is Role.SALESMAN:
+            group.permissions.add(*Permission.objects.filter(content_type__app_label="sales", codename__in=("add_salesorder", "view_salesorder")))
 
     return created
