@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ report.title }} | QUILL{% endblock %}
+{% block content %}
+  <h1>Reports</h1>
+  <form method="get" class="row g-3 align-items-end my-3">
+    <div class="col-12 col-md-auto">
+      <label for="report-type" class="form-label">Report</label>
+      <select id="report-type" name="report" class="form-select">
+        {% for slug, option in reports.items %}
+          <option value="{{ slug }}" {% if slug == key %}selected{% endif %}>{{ option.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% for field in form %}
+      <div class="col-12 col-sm-6 col-lg-auto">
+        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <div class="col-auto"><button type="submit" class="btn btn-primary">Apply</button></div>
+  </form>
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <h2 class="h4 my-2">{{ report.title }}</h2>
+    {% if valid %}
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-primary btn-sm" href="?{{ filters }}&amp;format=csv">Download CSV</a>
+        <a class="btn btn-outline-primary btn-sm" href="?{{ filters }}&amp;format=xlsx">Download Excel</a>
+        <a class="btn btn-outline-primary btn-sm" href="?{{ filters }}&amp;format=pdf">Download PDF</a>
+      </div>
+    {% endif %}
+  </div>
+  {% if report.note %}<p class="text-secondary">{{ report.note }}</p>{% endif %}
+  {% if valid %}
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead><tr>{% for column in report.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>{% for cell in row %}<td>{{ cell|default_if_none:"—" }}</td>{% endfor %}</tr>
+          {% empty %}
+            <tr><td colspan="{{ report.columns|length }}">No results on this page.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if previous or has_more %}
+      <nav class="d-flex align-items-center gap-3" aria-label="Report pages">
+        {% if previous %}<a class="btn btn-outline-secondary btn-sm" href="?{{ filters }}&amp;page={{ previous }}">Previous</a>{% endif %}
+        <span>Page {{ page }}</span>
+        {% if has_more %}<a class="btn btn-outline-secondary btn-sm" href="?{{ filters }}&amp;page={{ next_page }}">Next</a>{% endif %}
+      </nav>
+    {% endif %}
+  {% endif %}
+{% endblock %}

@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -50,6 +51,11 @@ class Item(models.Model):
     base_unit = models.ForeignKey(Unit, on_delete=models.PROTECT, related_name="items")
     hsn_code = models.CharField(max_length=12, blank=True)
     gst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0"))
+    reorder_point = models.DecimalField(
+        max_digits=16, decimal_places=3, default=Decimal("0"),
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text="Flag this item when stock is at or below this quantity in its base unit.",
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:

@@ -36,7 +36,7 @@ class UnitAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("sku", "name", "category", "base_unit", "hsn_code", "gst_rate", "is_active")
+    list_display = ("sku", "name", "category", "base_unit", "hsn_code", "gst_rate", "reorder_point", "is_active")
     list_filter = ("category", "is_active")
     search_fields = ("sku", "name")
 

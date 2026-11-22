@@ -62,7 +62,7 @@ python manage.py test
 
 ## Delivery plan
 
-The complete phasewise plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Phase 4 adds sales orders, GST invoices, dispatch, and payments; Phase 5 adds reports.
+The complete phasewise plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Phase 6 is next.
 
 ## Sales workflow
 
@@ -70,6 +70,18 @@ Open `/login/` to sign in, then `/orders/` to submit a customer order with multi
 
 ## Current status
 
-Phases 0 through 3 are complete. The repository contains the Django baseline, PostgreSQL and Docker Compose configuration, role groups, validated master data, benchmark master-data seeding, an inventory ledger, and BOM-based production runs. Draft opening balances, purchase receipts, and production runs can be created in Django Admin and posted with their posting actions. Production runs snapshot BOM quantities in base units, post consumption and output movements atomically, and record yield and consumption variances and costs. The stock summary is at `/stock/`, with item ledgers linked from it.
+Phases 0 through 5 are implemented. QUILL connects posted inventory and production movements to sales orders, GST invoices, dispatch, collections, and reports.
 
-After migrating, run `python manage.py provision_roles` again to grant inventory permissions to the existing groups. The benchmark opening balance of 100 kg flour at INR 20/kg followed by a 60 kg purchase at INR 30/kg results in 160 kg, INR 3,800 stock value, and INR 23.75/kg weighted-average cost.
+## Reports and dashboard
+
+After applying migrations, sign in and open **Reports** at `/reports/` (Admin or Auditor) or **Dashboard** at `/dashboard/` (Admin or Owner). Reports default to the current month to date. Set a date range and, where offered, a customer or item filter. CSV, Excel, and PDF downloads use the same filters and include all matching rows.
+
+Stock summaries reconcile the opening balance, inward and outward movements, and closing value from the ledger. Receivables use payments received through the selected date and age from the invoice date. The GST outward summary groups recorded tax by place of supply, customer registration, HSN, and rate for reconciliation. Dispatched sales margin uses revenue before GST and the cost recorded at dispatch. Production cost uses weighted-average stock valuation plus overhead entered for the run. Admins can set an item's reorder point in **Admin → Items**. It defaults to zero.
+
+To populate the reports on an empty demo ledger, run the following with an existing demo username:
+
+```powershell
+python manage.py seed_benchmark_reports --username YOUR_DEMO_USERNAME
+```
+
+The demo posts the 60 kg flour purchase at INR 45/kg, the 188-packet production run, the Retailer A invoice and dispatch, and the INR 4,000 collection. Distributor B's 120-packet order stays submitted so you can see the 32-packet shortage on approval. The reports show 120 kg flour, 19.5 L oil, 306 pouches, and 88 finished packets closing. Yield variance is −6%, oil variance is +5%, and Retailer A owes INR 3,875. Production cost is INR 31.1436 per good packet, including INR 1,800 overhead. The assignment supplies no cost for the 50 opening finished packets, so the demo values them at zero. This affects dispatch cost and margin.
