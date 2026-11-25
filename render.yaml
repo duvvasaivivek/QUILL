@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: quill
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health/
+    preDeployCommand: python manage.py migrate --noinput && python manage.py provision_roles
+    dockerCommand: sh -c 'exec gunicorn config.wsgi:application --bind "0.0.0.0:$PORT"'
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: quill-db
+          property: connectionString
+
+databases:
+  - name: quill-db
+    databaseName: quill
+    plan: basic-256mb
+    ipAllowList: []

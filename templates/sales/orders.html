@@ -1,7 +1,21 @@
-{% extends 'base.html' %}{% block content %}
+{% extends 'base.html' %}
+{% block content %}
 <h1>Sales orders</h1>
-<h2>Customer sales</h2>{% for row in customer_sales %}<p>{{ row.customer_snapshot__name }}: INR {{ row.sales }}</p>{% empty %}<p>No invoiced sales yet.</p>{% endfor %}
-<form method="post">{% csrf_token %}{{ form.as_p }}{{ lines.management_form }}
-{% for line in lines %}<fieldset class="border p-2 mb-2">{{ line.as_p }}</fieldset>{% endfor %}<button class="btn btn-primary">Submit order</button></form>
-<h2 class="mt-4">Orders</h2>{% for order in orders %}<p><a href="{% url 'sales_order' order.pk %}">Order {{ order.pk }} — {{ order.customer }} — {{ order.status }}</a></p>{% empty %}<p>No orders yet.</p>{% endfor %}
+<form method="post" class="mb-4">{% csrf_token %}
+  {{ form.as_p }}{{ lines.management_form }}{{ lines.non_form_errors }}
+  {% for line in lines %}<fieldset class="border rounded px-3 pt-2 mb-2" aria-label="Product line {{ forloop.counter }}">{{ line.as_p }}</fieldset>{% endfor %}
+  <button class="btn btn-primary">Submit order</button>
+</form>
+<h2>Orders</h2>
+{% for order in orders %}<p><a href="{% url 'sales_order' order.pk %}">Order {{ order.pk }} · {{ order.customer }} · {{ order.workflow_status }}</a></p>
+{% empty %}<p>No orders yet.</p>{% endfor %}
+{% if orders.has_other_pages %}
+  <nav class="d-flex align-items-center gap-3 mb-3" aria-label="Order pages">
+    {% if orders.has_previous %}<a href="?page={{ orders.previous_page_number }}">Previous</a>{% endif %}
+    <span>Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
+    {% if orders.has_next %}<a href="?page={{ orders.next_page_number }}">Next</a>{% endif %}
+  </nav>
+{% endif %}
+<h2>Customer sales</h2>
+{% for row in customer_sales %}<p>{{ row.customer_snapshot__name }}: INR {{ row.sales }}</p>{% empty %}<p>No invoiced sales yet.</p>{% endfor %}
 {% endblock %}

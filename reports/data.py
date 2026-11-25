@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from collections import defaultdict
 from datetime import date
 from decimal import Decimal
+from heapq import merge
 
 from django.db.models import Case, F, Q, Sum, Value, When
 from django.utils import timezone
@@ -38,46 +40,72 @@ def day(timestamp):
     return timezone.localtime(timestamp).date()
 
 
-def sales_rows(period):
-    lines = InvoiceLine.objects.filter(**period.between("invoice__issued_at"))
-    lines = period.match(lines, customer="invoice__order__customer_id", item="item_id")
-    lines = lines.select_related("invoice", "item").order_by("invoice__issued_at", "pk")
+def invoice_lines(period):
+    return period.match(InvoiceLine.objects.all(), customer="invoice__order__customer_id", item="item_id")
+
+
+def sales_documents(period):
+    lines = invoice_lines(period).select_related("invoice__credit_note", "item")
+    return (
+        (lines.filter(**period.between("invoice__issued_at")), False),
+        (lines.filter(**period.between("invoice__credit_note__issued_at")), True),
+    )
+
+
+def sales_entries(lines, credit):
+    event_date = "invoice__credit_note__issued_at" if credit else "invoice__issued_at"
+    lines = lines.order_by(event_date, "pk")
     for line in lines.iterator():
         invoice = line.invoice
+        document = invoice.credit_note if credit else invoice
+        sign = -1 if credit else 1
         tax = line.cgst + line.sgst + line.igst
-        yield (day(invoice.issued_at), invoice.number, invoice.customer_snapshot.get("name", ""),
-               line.item.sku, line.description, line.quantity, line.unit_price, line.taxable,
-               tax, line.taxable + tax)
+        yield (document.issued_at, (day(document.issued_at), document.number, invoice.customer_snapshot.get("name", ""),
+               line.item.sku, line.description, line.quantity * sign, line.unit_price, line.taxable * sign,
+               tax * sign, (line.taxable + tax) * sign))
+
+
+def sales_rows(period):
+    for _, row in merge(*(sales_entries(lines, credit) for lines, credit in sales_documents(period)),
+                        key=lambda entry: entry[0]):
+        yield row
+
+
+def grouped_sales(period, keys, amounts, *, annotations=None):
+    totals = defaultdict(lambda: [ZERO] * len(amounts))
+    for lines, credit in sales_documents(period):
+        groups = lines.order_by().annotate(**(annotations or {})).values(*keys).annotate(
+            **{f"sum_{field}": Sum(field) for field in amounts},
+        )
+        for row in groups.iterator():
+            key = tuple(row[field] if row[field] is not None else "" for field in keys)
+            for index, field in enumerate(amounts):
+                amount = row[f"sum_{field}"]
+                totals[key][index] += -amount if credit else amount
+    for key in sorted(totals):
+        yield key, totals[key]
 
 
 def sales_summary_rows(period):
-    lines = InvoiceLine.objects.filter(**period.between("invoice__issued_at"))
-    lines = period.match(lines, customer="invoice__order__customer_id", item="item_id")
-    groups = lines.values("invoice__order__customer__code", "invoice__customer_snapshot__name", "item__sku").annotate(
-        quantity=Sum("quantity"), taxable=Sum("taxable"), cgst=Sum("cgst"), sgst=Sum("sgst"), igst=Sum("igst"),
-    )
-    for row in groups.order_by("invoice__order__customer__code", "invoice__customer_snapshot__name", "item__sku").iterator():
-        tax = row["cgst"] + row["sgst"] + row["igst"]
-        yield (row["invoice__order__customer__code"], row["invoice__customer_snapshot__name"], row["item__sku"],
-               row["quantity"], row["taxable"], tax, row["taxable"] + tax)
+    keys = ("invoice__order__customer__code", "invoice__customer_snapshot__name", "item__sku")
+    for key, (quantity, taxable, cgst, sgst, igst) in grouped_sales(
+        period, keys, ("quantity", "taxable", "cgst", "sgst", "igst"),
+    ):
+        tax = cgst + sgst + igst
+        yield (*key, quantity, taxable, tax, taxable + tax)
 
 
 def gst_rows(period):
-    lines = InvoiceLine.objects.filter(**period.between("invoice__issued_at"))
-    lines = period.match(lines, customer="invoice__order__customer_id", item="item_id")
-    groups = (
-        lines.annotate(registration=Case(
+    registration = Case(
             When(Q(invoice__customer_snapshot__gstin="") | Q(invoice__customer_snapshot__gstin__isnull=True),
                  then=Value("Unregistered")),
             default=Value("Registered"),
-        )).values("invoice__customer_snapshot__state_code", "registration", "hsn", "gst_rate")
-        .annotate(taxable=Sum("taxable"), cgst=Sum("cgst"), sgst=Sum("sgst"), igst=Sum("igst"))
-        .order_by("invoice__customer_snapshot__state_code", "registration", "hsn", "gst_rate")
     )
-    for row in groups.iterator():
-        tax = row["cgst"] + row["sgst"] + row["igst"]
-        yield (row["invoice__customer_snapshot__state_code"] or "", row["registration"], row["hsn"], row["gst_rate"],
-               row["taxable"], row["cgst"], row["sgst"], row["igst"], row["taxable"] + tax)
+    keys = ("invoice__customer_snapshot__state_code", "registration", "hsn", "gst_rate")
+    for key, (taxable, cgst, sgst, igst) in grouped_sales(
+        period, keys, ("taxable", "cgst", "sgst", "igst"), annotations={"registration": registration},
+    ):
+        yield (*key, taxable, cgst, sgst, igst, taxable + cgst + sgst + igst)
 
 
 def purchase_rows(period):
@@ -124,13 +152,15 @@ def ledger_rows(period):
 
 def posted_runs(period):
     runs = ProductionRun.objects.filter(status=RunStatus.POSTED, **period.between("posted_at"))
-    return period.match(runs, item="bom__product__item_id").select_related("bom__product__item")
+    return period.match(runs, item="bom__product__item_id").select_related("bom__product__item", "reversal")
 
 
 def production_rows(period):
     for run in posted_runs(period).iterator():
+        reversal = getattr(run, "reversal", None)
+        status = "Reversed" if reversal and day(reversal.created_at) <= period.end else "Posted"
         yield (day(run.posted_at), run.reference, run.bom.product.item.sku, run.planned_output,
-               run.good_output, run.wastage, run.yield_variance_percent)
+               run.good_output, run.wastage, run.yield_variance_percent, status)
 
 
 def consumption_rows(period):
@@ -138,7 +168,8 @@ def consumption_rows(period):
     lines = lines.select_related("run", "item__base_unit").order_by("run__posted_at", "run_id", "item__sku")
     for line in lines.iterator():
         yield (day(line.run.posted_at), line.run.reference, line.item.sku, line.item.name,
-               line.item.base_unit.code, line.expected_quantity, line.actual_quantity, line.variance_percent)
+               line.item.base_unit.code, line.expected_quantity, line.actual_quantity, line.damaged_quantity,
+               line.variance_percent)
 
 
 def variance_rows(period):
@@ -167,6 +198,7 @@ def payment_rows(period):
 
 def receivables(period):
     invoices = period.match(Invoice.objects.filter(**period.through("issued_at")), customer="order__customer_id")
+    invoices = invoices.exclude(**period.through("credit_note__issued_at"))
     return invoices.annotate(
         received=Sum("payments__amount", filter=Q(**period.through("payments__received_at")), default=ZERO),
         balance=F("total") - F("received"),
@@ -208,23 +240,32 @@ def cost_rows(period):
                run.material_cost, run.allocated_overhead, run.total_cost, run.cost_per_good_unit)
 
 
-def margin_rows(period):
-    invoices = period.match(
-        Invoice.objects.filter(**period.between("dispatched_at")), customer="order__customer_id",
-    )
+def margin_entries(period, credit):
+    field = "credit_note__issued_at" if credit else "dispatched_at"
+    invoices = Invoice.objects.filter(dispatched_at__isnull=False, **period.between(field))
+    invoices = period.match(invoices, customer="order__customer_id")
     costs = StockMovement.objects.filter(
         movement_type=MovementType.DISPATCH, source_reference__in=invoices.order_by().values("number"),
     )
     costs = period.match(costs, item="item_id").order_by().values("source_reference", "item_id").annotate(cost=Sum("value"))
     by_invoice_item = {(row["source_reference"], row["item_id"]): -row["cost"] for row in costs.iterator()}
     lines = period.match(InvoiceLine.objects.filter(invoice__in=invoices), item="item_id")
-    lines = lines.values("invoice__number", "invoice__dispatched_at", "invoice__customer_snapshot",
+    date_field = f"invoice__{field}"
+    lines = lines.values("invoice__number", date_field, "invoice__customer_snapshot", "invoice__credit_note__number",
                          "item_id", "item__sku").annotate(quantity=Sum("quantity"), revenue=Sum("taxable"))
-    for row in lines.order_by("invoice__dispatched_at", "invoice__number", "item__sku").iterator():
+    for row in lines.order_by(date_field, "invoice__number", "item__sku").iterator():
         number = row["invoice__number"]
         cost = by_invoice_item.get((number, row["item_id"]))
         revenue = row["revenue"]
         margin = revenue - cost if cost is not None else None
         percent = (margin * 100 / revenue).quantize(Decimal("0.01")) if margin is not None and revenue else None
-        yield (day(row["invoice__dispatched_at"]), number, row["invoice__customer_snapshot"].get("name", ""),
-               row["item__sku"], row["quantity"], revenue, cost, margin, percent)
+        sign = -1 if credit else 1
+        yield (row[date_field], (day(row[date_field]), row["invoice__credit_note__number"] if credit else number,
+               row["invoice__customer_snapshot"].get("name", ""), row["item__sku"], row["quantity"] * sign,
+               revenue * sign, cost * sign if cost is not None else None,
+               margin * sign if margin is not None else None, percent))
+
+
+def margin_rows(period):
+    for _, row in merge(margin_entries(period, False), margin_entries(period, True), key=lambda entry: entry[0]):
+        yield row

@@ -50,7 +50,7 @@ class BenchmarkReportsTests(TestCase):
         self.assertEqual(closing["RM-OIL"], Decimal("19.5"))
         self.assertEqual(closing["PK-POUCH-200G"], Decimal("306"))
         self.assertEqual(closing["FG-MURUKKU-200G"], Decimal("88"))
-        self.assertEqual(results["production"][0][3:], (200, 188, 12, -6))
+        self.assertEqual(results["production"][0][3:], (200, 188, 12, -6, "Posted"))
         self.assertIn(("RM-OIL", 10, Decimal("10.5"), 5, 3), [row[3:] for row in results["variance"]])
         self.assertEqual(results["ageing"][0][-1], Decimal("3875"))
         self.assertEqual(results["costing"][0][-1], Decimal("31.1436"))

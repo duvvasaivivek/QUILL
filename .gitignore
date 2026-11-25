@@ -38,3 +38,5 @@ IMPLEMENTATION_PLAN.md
 AI_NOTES.md
 PROMPTS.md
 *.canvas.tsx
+output/demo/
+output/qa/

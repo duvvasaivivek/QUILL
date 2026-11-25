@@ -9,7 +9,7 @@ class DraftLineInline(admin.TabularInline):
     extra = 1
 
     def has_add_permission(self, request, obj=None):
-        return bool(obj and obj.status == DocumentStatus.DRAFT and super().has_add_permission(request, obj))
+        return bool((obj is None or obj.status == DocumentStatus.DRAFT) and super().has_add_permission(request, obj))
 
     def has_change_permission(self, request, obj=None):
         return bool(obj and obj.status == DocumentStatus.DRAFT and super().has_change_permission(request, obj))
@@ -30,7 +30,7 @@ class DocumentAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return bool((obj is None or obj.status == DocumentStatus.DRAFT) and super().has_delete_permission(request, obj))
 
-    @admin.action(description="Post selected draft documents")
+    @admin.action(description="Post selected draft documents", permissions=("change",))
     def post_selected(self, request, queryset):
         for document in queryset:
             try:

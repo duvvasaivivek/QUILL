@@ -32,7 +32,7 @@ class Report:
 
 
 REPORTS = {
-    "sales": Report("Sales register", ("Date", "Invoice", "Customer", "SKU", "Product", "Quantity", "Unit price",
+    "sales": Report("Sales register", ("Date", "Document", "Customer", "SKU", "Product", "Quantity", "Unit price",
                     "Taxable", "GST", "Total"), data.sales_rows, customer=True, item_label="Product"),
     "sales-summary": Report("Sales by customer and product", ("Customer code", "Customer", "SKU", "Quantity",
                             "Taxable", "GST", "Total"), data.sales_summary_rows, customer=True, item_label="Product"),
@@ -47,9 +47,9 @@ REPORTS = {
     "ledger": Report("Stock ledger", ("Date", "SKU", "Item", "Movement", "Reference", "Signed quantity", "Unit",
                      "Unit cost", "Signed value", "Posted by"), data.ledger_rows, item_label="Item"),
     "production": Report("Production planned vs actual", ("Date", "Run", "Product SKU", "Planned", "Good output", "Waste",
-                         "Yield variance %"), data.production_rows, item_label="Product"),
+                         "Yield variance %", "Status"), data.production_rows, item_label="Product"),
     "consumption": Report("Production material usage", ("Date", "Run", "Material SKU", "Material", "Unit", "Planned",
-                           "Actual", "Variance %"), data.consumption_rows, item_label="Product"),
+                           "Actual", "Damaged packaging", "Variance %"), data.consumption_rows, item_label="Product"),
     "variance": Report("Production variance alerts", ("Date", "Run", "Measure", "SKU", "Expected", "Actual",
                        "Variance %", "Tolerance %"), data.variance_rows, item_label="Product",
                        note="Only variances above the run's tolerance are shown."),
@@ -63,7 +63,7 @@ REPORTS = {
                               note="Age bands use the invoice date. Balances include payments through the selected date."),
     "costing": Report("Production cost per unit", ("Date", "Run", "Product SKU", "Good output", "Materials", "Overhead",
                       "Total cost", "Cost per good unit"), data.cost_rows, item_label="Product"),
-    "margin": Report("Dispatched sales margin", ("Dispatch date", "Invoice", "Customer", "SKU", "Quantity",
+    "margin": Report("Dispatched sales margin", ("Date", "Document", "Customer", "SKU", "Quantity",
                      "Revenue before GST", "Dispatch cost", "Gross margin", "Margin %"), data.margin_rows,
                      customer=True, item_label="Product",
                      note="Margin uses the stock ledger cost at dispatch. A missing ledger cost leaves the margin blank."),
@@ -204,7 +204,8 @@ def dashboard(request):
     period = data.Period(today, today)
     orders = SalesOrder.objects.filter(**period.between("created_at"))
     critical = data.stock_balances(period).filter(is_active=True, closing__lte=F("reorder_point"))
-    runs = ProductionRun.objects.filter(status=RunStatus.POSTED, **period.through("posted_at")).select_related("bom__product__item")
+    runs = ProductionRun.objects.filter(status=RunStatus.POSTED, **period.through("posted_at"))
+    runs = runs.exclude(**period.through("reversal__created_at")).select_related("bom__product__item")
     movements = StockMovement.objects.order_by("-created_at", "-pk")[:6]
     invoices = Invoice.objects.order_by("-issued_at", "-pk")[:6]
     payments = Payment.objects.order_by("-received_at", "-pk")[:6]

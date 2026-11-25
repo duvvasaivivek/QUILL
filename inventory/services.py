@@ -8,6 +8,26 @@ from masters.models import Item
 from inventory.models import DocumentStatus, MovementType, OpeningBalance, PurchaseReceipt, StockMovement, stock_balance
 
 
+def lock_items(item_ids):
+    """Use one lock order for all ledger posting paths."""
+    list(Item.objects.select_for_update().filter(pk__in=item_ids).order_by("pk"))
+
+
+def reverse_movements(movements, *, reference, movement_type, user):
+    """Record the exact opposite of each posted quantity and value within the caller's transaction."""
+    lock_items({movement.item_id for movement in movements})
+    for movement in movements:
+        if movement.quantity > 0:
+            quantity, value = stock_balance(movement.item)
+            if quantity < movement.quantity or value < movement.value:
+                raise ValidationError(f"Not enough stock or stock value to reverse {movement.item.sku}.")
+        StockMovement.objects.create(
+            item=movement.item, item_category=movement.item_category, unit=movement.unit,
+            movement_type=movement_type, source_reference=reference, reverses=movement,
+            quantity=-movement.quantity, value=-movement.value, unit_cost=movement.unit_cost, created_by=user,
+        )
+
+
 @transaction.atomic
 def post_document(document, user):
     """Post one opening balance or purchase receipt exactly once."""
@@ -26,7 +46,7 @@ def post_document(document, user):
         raise ValidationError("Add at least one line before posting.")
 
     # Lock item rows in a stable order, serializing valuation across document types.
-    list(Item.objects.select_for_update().filter(pk__in=[line.item_id for line in lines]).order_by("pk"))
+    lock_items(line.item_id for line in lines)
     for line in lines:
         line.full_clean()
         if movement_type == MovementType.OPENING and StockMovement.objects.filter(item=line.item, movement_type=MovementType.OPENING).exists():

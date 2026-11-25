@@ -1,10 +1,60 @@
-{% extends 'base.html' %}{% block content %}
-<h1>Order {{ order.pk }}</h1><p>{{ order.customer }} — {{ order.status }}</p>
+{% extends 'base.html' %}
+{% load l10n %}
+{% block content %}
+<h1>Order {{ order.pk }}</h1><p>{{ order.customer }} · {{ order.workflow_status }}</p>
 {% if error %}<p class="alert alert-danger">{{ error }}</p>{% endif %}
-{% for line in order.lines.all %}<p>{{ line.product }}: {{ line.quantity }} at INR {{ line.unit_price }}</p>{% endfor %}
-{% if can_manage and order.status == 'SUBMITTED' %}<form method="post">{% csrf_token %}{% for line in order.lines.all %}<label>{{ line.product }} <input type="number" step="0.001" min="0.001" name="quantity_{{ line.pk }}" value="{{ line.quantity }}"></label>{% endfor %}<button name="action" value="edit">Save quantities</button></form>{% endif %}
-{% if can_manage and order.status == 'SUBMITTED' %}<form method="post">{% csrf_token %}<button name="action" value="approve">Approve and invoice</button> <button name="action" value="reject">Reject</button></form>{% endif %}
+{% if can_manage and order.status == 'SUBMITTED' %}
+  <form method="post" class="mb-4">
+    {% csrf_token %}
+    {% for line in lines %}
+      <fieldset class="border rounded p-3 mb-2">
+        <legend class="float-none w-auto px-1 h6">{{ line.product }}</legend>
+        <div class="row g-2">
+          <div class="col-6"><label for="quantity-{{ line.pk }}" class="form-label">Quantity</label>
+            <input class="form-control" id="quantity-{{ line.pk }}" type="number" step="0.001" min="0.001" required
+                   name="quantity_{{ line.pk }}" value="{{ line.quantity|unlocalize }}"></div>
+          <div class="col-6"><label for="price-{{ line.pk }}" class="form-label">Unit price (INR)</label>
+            <input class="form-control" id="price-{{ line.pk }}" type="number" step="0.01" min="0" required
+                   name="unit_price_{{ line.pk }}" value="{{ line.unit_price|unlocalize }}"></div>
+        </div>
+      </fieldset>
+    {% endfor %}
+    <button class="btn btn-outline-primary" name="action" value="edit">Save quantities and prices</button>
+  </form>
+  <h2 class="h4">Stock before approval</h2>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead><tr><th scope="col">Product</th><th scope="col">Required</th><th scope="col">Available</th><th scope="col">Shortage</th></tr></thead>
+      <tbody>
+        {% for row in stock_review %}
+          <tr><td>{{ row.item.name }} ({{ row.item.base_unit.code }})</td><td>{{ row.required|floatformat:"-3" }}</td>
+              <td>{{ row.available|floatformat:"-3" }}</td>
+              <td{% if row.shortage %} class="text-danger fw-semibold"{% endif %}>{{ row.shortage|floatformat:"-3" }}</td></tr>
+        {% empty %}<tr><td colspan="4">This order has no line items.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if has_shortage %}<p class="text-danger">There is not enough stock to approve this order.</p>{% endif %}
+  <p class="text-secondary">Approval checks current stock again. Stock is deducted at dispatch.</p>
+  <form method="post" class="mb-3">{% csrf_token %}
+    <button class="btn btn-primary" name="action" value="approve">Approve and invoice</button>
+    <button class="btn btn-outline-danger" name="action" value="reject">Reject</button>
+  </form>
+{% else %}
+  {% for line in lines %}<p>{{ line.product }}: {{ line.quantity }} at INR {{ line.unit_price }}</p>{% endfor %}
+{% endif %}
 {% if order.invoice %}<h2>{{ order.invoice.number }}</h2><p>Total INR {{ order.invoice.total }} — Outstanding INR {{ order.invoice.outstanding }}</p><a href="{% url 'invoice_pdf' order.invoice.pk %}">Download invoice PDF</a>
-{% if can_manage %}{% if not order.invoice.dispatched_at %}<form method="post">{% csrf_token %}<button name="action" value="dispatch">Record dispatch</button></form>{% else %}<p>Dispatched {{ order.invoice.dispatched_at }}</p>{% endif %}
-<form method="post">{% csrf_token %}{{ payment_form.as_p }}<button name="action" value="pay">Record payment</button></form>{% endif %}
+{% if order.invoice.credit_note %}
+  <p>Cancelled: {{ order.invoice.credit_note.reason }}</p>
+  <a href="{% url 'credit_note_pdf' order.invoice.pk %}">Download credit note PDF</a>
+{% elif can_manage %}
+  {% if not order.invoice.dispatched_at %}<form method="post">{% csrf_token %}<button name="action" value="dispatch">Record dispatch</button></form>{% else %}<p>Dispatched {{ order.invoice.dispatched_at }}</p>{% endif %}
+  <form method="post">{% csrf_token %}{{ payment_form.as_p }}<button name="action" value="pay">Record payment</button></form>
+  {% if perms.sales.add_creditnote and not order.invoice.payments.exists %}
+    <form method="post" class="mt-3">{% csrf_token %}
+      {{ cancellation_form.as_p }}
+      <button name="action" value="cancel">Cancel and issue credit note</button>
+    </form>
+  {% endif %}
+{% endif %}
 {% endif %}<p><a href="{% url 'sales_orders' %}">All orders</a></p>{% endblock %}

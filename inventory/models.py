@@ -149,6 +149,7 @@ class StockMovement(models.Model):
     source_reference = models.CharField(max_length=40)
     opening_line = models.OneToOneField(OpeningBalanceLine, on_delete=models.PROTECT, null=True, blank=True)
     receipt_line = models.OneToOneField(PurchaseReceiptLine, on_delete=models.PROTECT, null=True, blank=True)
+    reverses = models.OneToOneField("self", on_delete=models.PROTECT, null=True, blank=True, related_name="reversal")
     unit_cost = models.DecimalField(max_digits=16, decimal_places=4)
     value = models.DecimalField(max_digits=20, decimal_places=4)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

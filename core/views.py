@@ -1,7 +1,10 @@
 from django.contrib.auth.views import LoginView
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_safe
 
 from reports.views import access
 
@@ -26,3 +29,23 @@ def home(request):
 def health(request):
     """Expose a lightweight probe endpoint for hosting platforms."""
     return JsonResponse({"status": "ok", "service": "quill"})
+
+
+@require_safe
+def manifest(request):
+    return JsonResponse({
+        "id": "/", "name": "QUILL Inventory and Sales", "short_name": "QUILL",
+        "start_url": reverse("home"), "scope": "/", "display": "standalone",
+        "background_color": "#ffffff", "theme_color": "#0d6efd",
+        "icons": [
+            {"src": staticfiles_storage.url(f"icons/quill-{size}.png"),
+             "sizes": f"{size}x{size}", "type": "image/png", "purpose": "any"}
+            for size in (192, 512)
+        ],
+    }, content_type="application/manifest+json")
+
+
+@require_safe
+@never_cache
+def service_worker(request):
+    return render(request, "core/service-worker.js", content_type="application/javascript")
