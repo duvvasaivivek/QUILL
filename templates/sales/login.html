@@ -1,1 +1,17 @@
-{% extends 'base.html' %}{% block content %}<h1>Sign in</h1><form method="post">{% csrf_token %}{{ form.as_p }}<input type="hidden" name="next" value="{{ next }}"><button class="btn btn-primary">Sign in</button></form>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Sign in | QUILL{% endblock %}
+{% block content %}
+  <section class="panel auth-panel">
+    <h1>Sign in</h1>
+    {% if next and next != "/" %}<p class="muted">Sign in to continue to the page you requested.</p>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="quill-message error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+        <div class="auth-field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
+      {% endfor %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn-primary" type="submit">Sign in</button>
+    </form>
+  </section>
+{% endblock %}

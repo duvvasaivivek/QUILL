@@ -1,0 +1,18 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %}{{ title }} | QUILL administration{% endblock %}
+{% block dark-mode-vars %}{% endblock %}
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/admin-light.css' %}">
+{% endblock %}
+{% block branding %}
+  <div id="site-name"><a href="{% url 'admin:index' %}">QUILL administration</a></div>
+{% endblock %}
+{% block userlinks %}
+  <a href="{% url 'home' %}">Workspace</a>
+  {% if user.has_usable_password %}<a href="{% url 'admin:password_change' %}">Change password</a>{% endif %}
+  <form id="logout-form" method="post" action="{% url 'logout' %}">
+    {% csrf_token %}<button type="submit">Sign out</button>
+  </form>
+{% endblock %}

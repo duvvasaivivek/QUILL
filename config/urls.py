@@ -1,7 +1,7 @@
 """Top-level URL routing for QUILL."""
 
 from django.contrib import admin
-from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LoginView
 from django.urls import path
 
 from core import views
@@ -14,8 +14,8 @@ urlpatterns = [
     path("service-worker.js", views.service_worker, name="service_worker"),
     path("reports/", report_views.report_index, name="reports"),
     path("dashboard/", report_views.dashboard, name="owner_dashboard"),
-    path("login/", views.QuillLoginView.as_view(template_name="sales/login.html"), name="login"),
-    path("logout/", LogoutView.as_view(next_page="home"), name="logout"),
+    path("login/", LoginView.as_view(template_name="sales/login.html"), name="login"),
+    path("logout/", views.QuillLogoutView.as_view(), name="logout"),
     path("orders/", sales_views.orders, name="sales_orders"),
     path("orders/<int:order_id>/", sales_views.order_detail, name="sales_order"),
     path("invoices/<int:invoice_id>/pdf/", sales_views.invoice_pdf, name="invoice_pdf"),
@@ -26,3 +26,6 @@ urlpatterns = [
     path("stock/", inventory_views.stock_summary, name="stock_summary"),
     path("stock/<int:item_id>/", inventory_views.item_ledger, name="item_ledger"),
 ]
+
+handler403 = views.permission_denied
+handler404 = views.page_not_found

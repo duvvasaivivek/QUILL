@@ -30,7 +30,6 @@ dist/
 build/
 *.egg-info/
 
-IMPLEMENTATION_PLAN.md
 .agents/
 .codex/
 .cursor/

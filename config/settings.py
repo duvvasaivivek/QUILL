@@ -79,7 +79,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "reports.views.access",
+                "core.workspace.navigation",
             ],
         },
     },
@@ -144,7 +144,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "sales_orders"
+LOGIN_REDIRECT_URL = "home"
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"
 
 # Local defaults are fictional and intended only for the sample invoices.
 QUILL_INVOICE_ISSUER = {

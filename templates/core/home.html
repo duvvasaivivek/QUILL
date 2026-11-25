@@ -1,13 +1,105 @@
 {% extends "base.html" %}
-
-{% block title %}QUILL | Order-to-Audit{% endblock %}
-
+{% block title %}{{ heading }} | QUILL{% endblock %}
 {% block content %}
-  <div class="row justify-content-center">
-    <div class="col-lg-8">
-      <h1 class="display-6 fw-bold">QUILL</h1>
-      <p class="lead text-secondary">Inventory, production, sales, and reporting for small manufacturers.</p>
-      {% if user.is_staff %}<a class="btn btn-outline-primary" href="{% url 'admin:index' %}">Django Admin</a>{% endif %}
+<div class="page-heading">
+  <div><p class="page-date">{{ today|date:"l, j F Y" }}</p><h1>{{ heading }}</h1></div>
+  {% if section == "sales" and destinations.orders %}
+    <a class="btn btn-primary" href="{% url 'sales_orders' %}#new-order">New order</a>
+  {% elif section == "production" and destinations.production and perms.production.add_productionrun %}
+    <a class="btn btn-primary" href="{% url 'admin:production_productionrun_add' %}">New production run</a>
+  {% endif %}
+</div>
+
+{% if section == "operations" or section == "sales" %}
+  {% if destinations.orders %}
+    <div class="metrics">
+      {% if section == "sales" %}
+        <div class="metric"><span>My orders</span><strong>{{ order_count }}</strong></div>
+      {% else %}
+        <div class="metric"><span>Awaiting dispatch</span><strong>{{ dispatch_count }}</strong></div>
+      {% endif %}
+      <div class="metric"><span>Awaiting approval</span><strong>{{ waiting_count }}</strong></div>
     </div>
+    <div class="workspace-columns{% if section == 'operations' %} operations-columns{% endif %}">
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>{% if section == "operations" %}Orders to review{% else %}Recent orders{% endif %}</h2>
+          <a href="{% url 'sales_orders' %}">All orders</a>
+        </div>
+        <ul class="work-list">
+          {% for order in orders %}
+            <li>
+              <a href="{% url 'sales_order' order.pk %}"><strong>{{ order.customer.name }}</strong><span>Order {{ order.pk }} · {{ order.created_at|date:"j M" }}</span></a>
+              <span class="status-pill" data-status="{{ order.workflow_status|slugify }}">{{ order.workflow_status }}</span>
+            </li>
+          {% empty %}<li class="empty-state">{% if section == "operations" %}No orders awaiting approval.{% else %}No orders submitted yet.{% endif %}</li>{% endfor %}
+        </ul>
+      </section>
+      {% if section == "operations" %}
+        <section class="panel">
+          <div class="panel-heading"><h2>Collections</h2>{% if destinations.reports %}<a href="{% url 'reports' %}?report=ageing">All outstanding</a>{% endif %}</div>
+          <ul class="work-list">
+            {% for invoice in collections %}
+              <li><a href="{% url 'sales_order' invoice.order_id %}"><strong>{{ invoice.order.customer.name }}</strong><span>{{ invoice.number }}</span></a><strong class="tabular">INR {{ invoice.balance|floatformat:2 }}</strong></li>
+            {% empty %}<li class="empty-state">No outstanding invoices.</li>{% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if section == "operations" and destinations.purchases %}
+    <section class="panel">
+      <div class="panel-heading"><h2>Purchasing</h2><a href="{% url 'admin:inventory_purchasereceipt_changelist' %}">All receipts</a></div>
+      {% if perms.inventory.add_purchasereceipt %}<div class="panel-body"><a class="btn btn-outline-secondary" href="{% url 'admin:inventory_purchasereceipt_add' %}">Record a receipt</a></div>{% endif %}
+    </section>
+  {% endif %}
+{% elif section == "production" %}
+  <div class="workspace-columns">
+    {% if destinations.production %}
+      <section class="panel">
+        <div class="panel-heading"><h2>Draft production runs</h2><a href="{% url 'admin:production_productionrun_changelist' %}">All runs</a></div>
+        <ul class="work-list">{% for run in draft_runs %}
+          <li><a href="{% url 'admin:production_productionrun_change' run.pk %}"><strong>{{ run.bom.product.item.name }}</strong><span>{{ run.reference }}</span></a><span class="status-pill" data-status="draft">Draft</span></li>
+        {% empty %}<li class="empty-state">No draft production runs.</li>{% endfor %}</ul>
+      </section>
+    {% endif %}
+    {% if destinations.purchases %}
+      <section class="panel">
+        <div class="panel-heading"><h2>Draft purchase receipts</h2><a href="{% url 'admin:inventory_purchasereceipt_changelist' %}">All receipts</a></div>
+        <ul class="work-list">{% for receipt in draft_receipts %}
+          <li><a href="{% url 'admin:inventory_purchasereceipt_change' receipt.pk %}"><strong>{{ receipt.supplier.name }}</strong><span>{{ receipt.reference }}</span></a><span class="status-pill" data-status="draft">Draft</span></li>
+        {% empty %}<li class="empty-state">No draft receipts.</li>{% endfor %}</ul>
+      </section>
+    {% endif %}
   </div>
+  {% if destinations.stock %}
+    <section class="panel"><div class="panel-heading"><h2>Material availability</h2><a href="{% url 'stock_summary' %}">Check stock</a></div></section>
+  {% endif %}
+{% elif section == "audit" %}
+  <div class="workspace-columns">
+    {% if destinations.reports %}
+      <section class="panel">
+        <div class="panel-heading"><h2>Reports</h2><a href="{% url 'reports' %}">All reports</a></div>
+        <ul class="work-list">
+          <li><a href="{% url 'reports' %}?report=sales">Sales register</a></li>
+          <li><a href="{% url 'reports' %}?report=gst">GST summary</a></li>
+          <li><a href="{% url 'reports' %}?report=stock">Stock summary</a></li>
+          <li><a href="{% url 'reports' %}?report=production">Production results</a></li>
+          <li><a href="{% url 'reports' %}?report=ageing">Outstanding and ageing</a></li>
+        </ul>
+      </section>
+    {% endif %}
+    {% if destinations.audit %}
+      <section class="panel">
+        <div class="panel-heading"><h2>Recent audit events</h2><a href="{% url 'admin:core_auditevent_changelist' %}">Audit log</a></div>
+        <ul class="work-list">{% for event, action in events %}
+          <li><a href="{% url 'admin:core_auditevent_change' event.pk %}"><strong>{{ event.reference }}</strong><span>{{ action }} · {{ event.actor.get_username }}</span></a><span>{{ event.created_at|date:"j M, H:i" }}</span></li>
+        {% empty %}<li class="empty-state">No audit events recorded.</li>{% endfor %}</ul>
+      </section>
+    {% endif %}
+  </div>
+{% endif %}
+{% if not destinations %}
+  <p class="panel empty-state">No tools are assigned to this account. Contact your administrator for access.</p>
+{% endif %}
 {% endblock %}

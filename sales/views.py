@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django import forms
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
@@ -65,6 +66,7 @@ def orders(request):
         except ValidationError as error:
             form.add_error(None, error)
         else:
+            messages.success(request, "Order submitted.")
             return redirect("sales_order", order_id=order.pk)
     records = SalesOrder.objects.select_related("customer", "invoice").order_by("-pk")
     if not can_manage:
@@ -143,6 +145,14 @@ def order_detail(request, order_id):
             else:
                 raise ValidationError("Unknown order action.")
             if not payment_form.errors and not cancellation_form.errors:
+                messages.success(request, {
+                    "approve": "Invoice issued.",
+                    "reject": "Order rejected.",
+                    "edit": "Order details saved.",
+                    "dispatch": "Dispatch recorded.",
+                    "pay": "Payment recorded.",
+                    "cancel": "Invoice cancelled and credit note issued.",
+                }[action])
                 return redirect("sales_order", order_id=order.pk)
         except ValidationError as exc:
             error = "; ".join(exc.messages)

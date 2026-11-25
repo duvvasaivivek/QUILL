@@ -1,0 +1,36 @@
+:root {
+  color-scheme: light;
+  --body-bg: #fff;
+  --body-fg: #1b293a;
+  --primary: #e5eefb;
+  --secondary: #edf2f8;
+  --accent: #244e84;
+  --primary-fg: #253851;
+  --header-bg: #fff;
+  --header-color: #3d516b;
+  --header-branding-color: #244e84;
+  --header-link-color: #244e84;
+  --breadcrumbs-bg: #eef2f7;
+  --breadcrumbs-fg: #52647a;
+  --breadcrumbs-link-fg: #244e84;
+  --link-fg: #244e84;
+  --link-hover-color: #163d70;
+  --link-selected-fg: #244e84;
+  --hairline-color: #dce3ec;
+  --border-color: #c7d1de;
+  --button-fg: #193f73;
+  --button-bg: #e0edfe;
+  --button-hover-bg: #cedff7;
+  --default-button-bg: #d4e4fa;
+  --default-button-hover-bg: #c6daf7;
+  --close-button-bg: #eef2f7;
+  --close-button-hover-bg: #e0e8f2;
+  --delete-button-bg: #fceeee;
+  --delete-button-hover-bg: #f5e0e2;
+  --object-tools-fg: #244e84;
+}
+#header { border-bottom: 1px solid #dce3ec; }
+#user-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .4rem .9rem; text-transform: none; }
+#site-name a { font-weight: 650; }
+#content-related .module h2, .module h2, .module caption { color: #253851; }
+:focus-visible { outline: 3px solid #356cb0; outline-offset: 2px; }

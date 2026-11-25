@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ report.title }} | QUILL{% endblock %}
 {% block content %}
-  <h1>Reports</h1>
+  <div class="page-heading"><h1>Reports</h1></div>
   <form method="get" class="row g-3 align-items-end my-3">
     <div class="col-12 col-md-auto">
       <label for="report-type" class="form-label">Report</label>
@@ -32,7 +32,7 @@
   </div>
   {% if report.note %}<p class="text-secondary">{{ report.note }}</p>{% endif %}
   {% if valid %}
-    <div class="table-responsive">
+    <div class="panel table-responsive" tabindex="0" role="region" aria-label="{{ report.title }}">
       <table class="table table-striped align-middle">
         <thead><tr>{% for column in report.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
         <tbody>

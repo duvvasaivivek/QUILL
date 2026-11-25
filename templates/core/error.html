@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | QUILL{% endblock %}
+{% block content %}
+  <section class="panel auth-panel">
+    <h1>{{ title }}</h1>
+    <p>{{ detail }}</p>
+    {% if workspace_links %}<a class="btn btn-primary" href="{% url 'home' %}">Back to workspace</a>
+    {% else %}<a class="btn btn-primary" href="{% url 'login' %}">Sign in</a>{% endif %}
+  </section>
+{% endblock %}

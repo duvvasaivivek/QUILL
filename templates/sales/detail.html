@@ -1,8 +1,12 @@
 {% extends 'base.html' %}
 {% load l10n %}
+{% block title %}Order {{ order.pk }} | QUILL{% endblock %}
+{% block breadcrumbs %}
+<nav class="quill-breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'sales_orders' %}">Sales orders</a><span aria-hidden="true">/</span><span aria-current="page">{{ order.pk }}</span></nav>
+{% endblock %}
 {% block content %}
 <h1>Order {{ order.pk }}</h1><p>{{ order.customer }} · {{ order.workflow_status }}</p>
-{% if error %}<p class="alert alert-danger">{{ error }}</p>{% endif %}
+{% if error %}<p class="alert alert-danger" role="alert">{{ error }}</p>{% endif %}
 {% if can_manage and order.status == 'SUBMITTED' %}
   <form method="post" class="mb-4">
     {% csrf_token %}
@@ -57,4 +61,4 @@
     </form>
   {% endif %}
 {% endif %}
-{% endif %}<p><a href="{% url 'sales_orders' %}">All orders</a></p>{% endblock %}
+{% endif %}{% endblock %}

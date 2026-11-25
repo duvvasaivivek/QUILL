@@ -64,7 +64,7 @@ python manage.py test
 
 ## Delivery plan
 
-Phases 0 through 6 are implemented locally. The Render Blueprint is ready to deploy.
+Phases 0 through 7 establish the business workflows and the shared light workspace. Sign in at `/login/` to reach your role's home screen. Purchases, production, master data, and audit access still use Django Admin through permission-filtered links. Phases 8-12 in the [implementation plan](IMPLEMENTATION_PLAN.md) cover the dedicated workflow screens and acceptance checks.
 
 ## Sales workflow
 

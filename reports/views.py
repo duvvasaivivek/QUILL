@@ -12,7 +12,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_safe
 
-from accounts.roles import Role
+from core.workspace import report_access as access
 from inventory.models import StockMovement
 from masters.models import Customer, Item
 from production.models import ProductionRun, RunStatus
@@ -99,18 +99,6 @@ class ReportFilter(forms.Form):
         if values.get("start") and values.get("end") and values["start"] > values["end"]:
             self.add_error("end", "The end date must be on or after the start date.")
         return values
-
-
-def access(request):
-    user = request.user
-    roles = set()
-    if user.is_authenticated and user.is_active:
-        roles = set(user.groups.filter(name__in=(Role.ADMIN.value, Role.AUDITOR.value, Role.OWNER.value))
-                    .values_list("name", flat=True))
-    return {
-        "can_view_reports": user.is_superuser or bool(roles & {Role.ADMIN.value, Role.AUDITOR.value}),
-        "can_view_dashboard": user.is_superuser or bool(roles & {Role.ADMIN.value, Role.OWNER.value}),
-    }
 
 
 def export_report(key, report, period, export):
