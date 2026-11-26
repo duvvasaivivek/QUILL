@@ -5,12 +5,14 @@
 {% endblock %}
 {% block content %}
 <div class="page-heading"><h1>{{ item.name }} stock ledger</h1></div>
+<form method="get" class="panel inventory-filters" aria-label="Filter movements"><div class="inventory-fields"><div>{{ date_filter.label_tag }}{{ date_filter }}{{ date_filter.errors }}</div><div class="inventory-actions"><button class="btn btn-outline-secondary">Filter</button>{% if request.GET.end %}<a href="{{ request.path }}">Clear</a>{% endif %}</div></div></form>
 <div class="panel table-responsive" tabindex="0" role="region" aria-label="Stock movements">
 <table class="table table-striped">
-  <thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Quantity ({{ item.base_unit.code }})</th><th>Unit cost</th><th>Value</th><th>Posted by</th></tr></thead>
-  <tbody>{% for movement in movements %}
-  <tr><td>{{ movement.created_at }}</td><td>{{ movement.get_movement_type_display }}</td><td>{% if user.is_staff and movement.opening_line_id and perms.inventory.view_openingbalance %}<a href="{% url 'admin:inventory_openingbalance_change' movement.opening_line.document_id %}">{{ movement.source_reference }}</a>{% elif user.is_staff and movement.receipt_line_id and perms.inventory.view_purchasereceipt %}<a href="{% url 'admin:inventory_purchasereceipt_change' movement.receipt_line.document_id %}">{{ movement.source_reference }}</a>{% else %}{{ movement.source_reference }}{% endif %}</td><td>{{ movement.quantity }}</td><td>{{ movement.unit_cost }}</td><td>{{ movement.value }}</td><td>{{ movement.created_by }}</td></tr>
+  <thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Quantity ({{ item.base_unit.code }})</th><th>Unit cost (INR)</th><th>Value (INR)</th><th>Posted by</th></tr></thead>
+  <tbody>{% for movement, source in rows %}
+  <tr><td>{{ movement.created_at }}</td><td>{{ movement.get_movement_type_display }}</td><td>{% if source %}<a href="{{ source }}">{{ movement.source_reference }}</a>{% else %}{{ movement.source_reference }}{% endif %}</td><td>{{ movement.quantity }}</td><td>{{ movement.unit_cost }}</td><td>{{ movement.value }}</td><td>{{ movement.created_by }}</td></tr>
   {% empty %}<tr><td colspan="7">No stock movements for this item.</td></tr>{% endfor %}</tbody>
 </table>
 </div>
+{% include "inventory/pagination.html" %}
 {% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if new %}New{% else %}Edit{% endif %} {{ label|lower }} | QUILL{% endblock %}
+{% block breadcrumbs %}<nav class="quill-breadcrumbs" aria-label="Breadcrumb"><a href="{% url list_url %}">{{ list_label }}</a><span aria-hidden="true">/</span><span aria-current="page">{% if new %}New draft{% else %}Edit draft{% endif %}</span></nav>{% endblock %}
+{% block content %}
+<div class="page-heading"><h1>{% if new %}New{% else %}Edit{% endif %} {{ label|lower }}</h1></div>
+<form method="post" class="panel inventory-editor" data-inventory-editor>
+  {% csrf_token %}
+  {{ form.non_field_errors }}{{ lines.non_form_errors }}{{ lines.management_form }}
+  <div class="inventory-fields inventory-document-fields">{% for field in form %}<div>{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}</div>
+  <p class="inventory-hint">Use the unit shown next to each item.</p>
+  <div data-lines>{% for row in lines %}{% include "inventory/document_line.html" with number=forloop.counter %}{% endfor %}</div>
+  <template data-empty-line>{% include "inventory/document_line.html" with row=lines.empty_form %}</template>
+  <div class="inventory-editor-total"><button type="button" hidden data-add-line class="btn btn-outline-secondary">Add line</button><div>Total (INR) <strong><output data-document-total>—</output></strong></div></div>
+  <div class="inventory-actions"><button class="btn btn-primary">Save draft</button>{% if new %}<a href="{% url list_url %}">Cancel</a>{% else %}<a href="{% url detail_url document_id %}">Cancel</a>{% endif %}</div>
+</form>
+<script defer src="{% static 'js/inventory.js' %}"></script>
+{% endblock %}

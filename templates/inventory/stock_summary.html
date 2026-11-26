@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Stock summary | QUILL{% endblock %}
 {% block content %}
-<div class="page-heading"><h1>Stock summary</h1></div>
+<div class="page-heading"><h1>Stock summary</h1>{% if perms.inventory.view_openingbalance %}<a class="btn btn-outline-secondary" href="{% url 'opening_balances' %}">Opening balances</a>{% endif %}</div>
+{% include "inventory/filters.html" %}
 <div class="panel table-responsive" tabindex="0" role="region" aria-label="Stock balances">
 <table class="table table-striped">
-  <thead><tr><th>Item</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Value</th></tr></thead>
-  <tbody>{% for item in items %}
-  <tr><td><a href="{% url 'item_ledger' item.pk %}">{{ item.sku }} — {{ item.name }}</a></td><td>{{ item.get_category_display }}</td><td>{{ item.stock_quantity|default_if_none:'0' }}</td><td>{{ item.base_unit.code }}</td><td>{{ item.stock_value|default_if_none:'0' }}</td></tr>
-  {% empty %}<tr><td colspan="5">No stock items.</td></tr>{% endfor %}</tbody>
+  <thead><tr><th>Item</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Value (INR)</th><th>Stock status</th></tr></thead>
+  <tbody>{% for item in page %}
+  <tr><td><a href="{% url 'item_ledger' item.pk %}{% if filters.cleaned_data.end %}?end={{ filters.cleaned_data.end|date:'Y-m-d' }}{% endif %}">{{ item.sku }} — {{ item.name }}</a></td><td>{{ item.get_category_display }}</td><td>{{ item.stock_quantity|floatformat:'-3' }}</td><td>{{ item.base_unit.code }}</td><td>{{ item.stock_value|floatformat:4 }}</td><td>{% if not item.is_active %}<span class="status-pill">Inactive</span>{% elif item.stock_quantity <= item.reorder_point %}<span class="status-pill" data-status="low">Low stock</span>{% else %}In stock{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="6">No stock items match these filters.</td></tr>{% endfor %}</tbody>
 </table>
 </div>
+{% include "inventory/pagination.html" %}
 {% endblock %}

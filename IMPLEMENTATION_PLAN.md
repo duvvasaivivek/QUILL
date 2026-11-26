@@ -203,7 +203,7 @@ Build the shared interface before converting individual workflows.
 
 ### Phase 8 - Purchases, opening balances, and inventory workspace
 
-**Estimated duration:** 2-3 working days
+**Status:** Implemented
 
 Build receipt and inventory screens using the Phase 2 services.
 

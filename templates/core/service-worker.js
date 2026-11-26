@@ -1,5 +1,5 @@
 {% load static %}
-const CACHE = 'quill-public-v2';
+const CACHE = 'quill-public-v3';
 const OFFLINE = '{% static "offline.html" %}';
 const ASSETS = [
   OFFLINE,

@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Sum
 
+from core.models import AppendOnlyRecord
 from masters.models import Item, ItemCategory, Supplier
 
 
@@ -27,13 +28,17 @@ class PostedDocument(models.Model):
     class Meta:
         abstract = True
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
-        if self.pk and type(self).objects.filter(pk=self.pk, status=DocumentStatus.POSTED).exists():
+        current = type(self).objects.select_for_update().filter(pk=self.pk).first() if self.pk else None
+        if current and current.status == DocumentStatus.POSTED:
             raise ValidationError("Posted documents are immutable.")
         return super().save(*args, **kwargs)
 
+    @transaction.atomic
     def delete(self, *args, **kwargs):
-        if self.status == DocumentStatus.POSTED:
+        current = type(self).objects.select_for_update().get(pk=self.pk) if self.pk else self
+        if current.status == DocumentStatus.POSTED:
             raise ValidationError("Posted documents are immutable.")
         return super().delete(*args, **kwargs)
 
@@ -85,6 +90,7 @@ class OpeningBalanceLine(models.Model):
 class PurchaseReceipt(PostedDocument):
     reference = models.CharField(max_length=40, unique=True)
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
     status = models.CharField(max_length=6, choices=DocumentStatus.choices, default=DocumentStatus.DRAFT)
     posted_at = models.DateTimeField(null=True, blank=True)
     posted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True)
@@ -127,6 +133,14 @@ class PurchaseReceiptLine(models.Model):
         if PurchaseReceipt.objects.get(pk=self.document_id).status != DocumentStatus.DRAFT:
             raise ValidationError("Posted receipts cannot be deleted.")
         return super().delete(*args, **kwargs)
+
+
+class PurchaseReceiptReversal(AppendOnlyRecord):
+    receipt = models.OneToOneField(PurchaseReceipt, on_delete=models.PROTECT, related_name="reversal")
+    reference = models.CharField(max_length=40, unique=True)
+    reason = models.CharField(max_length=250)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
 
 
 class MovementType(models.TextChoices):

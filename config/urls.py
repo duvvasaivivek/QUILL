@@ -6,6 +6,7 @@ from django.urls import path
 
 from core import views
 from inventory import views as inventory_views
+from inventory.models import OpeningBalance, PurchaseReceipt
 from reports import views as report_views
 from sales import views as sales_views
 
@@ -25,7 +26,21 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("stock/", inventory_views.stock_summary, name="stock_summary"),
     path("stock/<int:item_id>/", inventory_views.item_ledger, name="item_ledger"),
+    path("purchases/<int:document_id>/reverse/", inventory_views.purchase_reverse, name="purchase_receipt_reverse"),
+    path("production-reversals/<int:reversal_id>/", inventory_views.production_reversal_detail, name="production_reversal_detail"),
 ]
+
+for prefix, model, route in (
+    ("purchases", PurchaseReceipt, "purchase_receipt"),
+    ("opening-balances", OpeningBalance, "opening_balance"),
+):
+    urlpatterns += [
+        path(f"{prefix}/", inventory_views.document_list, {"model": model}, name=f"{route}s"),
+        path(f"{prefix}/new/", inventory_views.document_edit, {"model": model}, name=f"{route}_new"),
+        path(f"{prefix}/<int:document_id>/", inventory_views.document_detail, {"model": model}, name=route),
+        path(f"{prefix}/<int:document_id>/edit/", inventory_views.document_edit, {"model": model}, name=f"{route}_edit"),
+        path(f"{prefix}/<int:document_id>/post/", inventory_views.document_post, {"model": model}, name=f"{route}_post"),
+    ]
 
 handler403 = views.permission_denied
 handler404 = views.page_not_found

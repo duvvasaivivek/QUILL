@@ -48,8 +48,7 @@ class Workspace:
                 ("orders", "Sales orders", "sales_orders",
                  self.allows("sales.add_salesorder") or self.allows("sales.change_salesorder")),
                 ("stock", "Stock", "stock_summary", self.allows("inventory.view_stockmovement")),
-                ("purchases", "Purchase receipts", "admin:inventory_purchasereceipt_changelist",
-                 self.allows("inventory.view_purchasereceipt", staff=True)),
+                ("purchases", "Purchase receipts", "purchase_receipts", self.allows("inventory.view_purchasereceipt")),
                 ("production", "Production runs", "admin:production_productionrun_changelist",
                  self.allows("production.view_productionrun", staff=True)),
                 ("reports", "Reports", "reports", self.report_access["can_view_reports"]),
@@ -85,6 +84,7 @@ def navigation(request):
         related = {
             "orders": {"sales_order"},
             "stock": {"item_ledger"},
+            "purchases": {"purchase_receipt", "purchase_receipt_new", "purchase_receipt_edit", "purchase_receipt_reverse"},
         }.get(key, set())
         routes.append((label, name, related))
     return {

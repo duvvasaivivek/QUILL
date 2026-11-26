@@ -64,7 +64,11 @@ python manage.py test
 
 ## Delivery plan
 
-Phases 0 through 7 establish the business workflows and the shared light workspace. Sign in at `/login/` to reach your role's home screen. Purchases, production, master data, and audit access still use Django Admin through permission-filtered links. Phases 8-12 in the [implementation plan](IMPLEMENTATION_PLAN.md) cover the dedicated workflow screens and acceptance checks.
+Phases 0 through 8 establish the business workflows, the shared light workspace, and dedicated purchasing and inventory screens. Sign in at `/login/` to reach your role's home screen. Production, master data, and the audit log use Django Admin through permission-filtered links. Phases 9–12 cover their dedicated screens and integrated acceptance checks. [Implementation plan](IMPLEMENTATION_PLAN.md)
+
+## Purchases and inventory
+
+After upgrading, run `python manage.py migrate` and `python manage.py provision_roles`. An admin or production supervisor can open **Purchase receipts**, choose **New purchase receipt**, enter quantities in each item's base unit, save a draft, and review **Post to stock**. Posting records the actor and time. **Stock** shows quantities, valuation, low-stock status, and source documents for the movements you can access. Use **Stock as of** to see balances through a selected date. Admins can create and post opening balances from **Stock → Opening balances**, once per item.
 
 ## Sales workflow
 
@@ -105,7 +109,7 @@ Choose a local demo password at the prompt. Sign in at `http://localhost:8001/lo
 
 - `demo_sales_a` and `demo_sales_b` submit and view their own orders.
 - `demo_admin` verifies orders, invoices, dispatches, and collects payments.
-- `demo_production` enters receipts and production in Django Admin.
+- `demo_production` enters purchases in **Purchase receipts** and production in Django Admin.
 - `demo_auditor` views reports and the audit log.
 - `demo_owner` views the dashboard.
 
@@ -116,6 +120,8 @@ To start over, `docker compose -p quill-demo down --volumes` deletes the **isola
 ## Corrections
 
 Posted invoices and production runs stay in the history. An admin can cancel an unpaid invoice from its order page with a reason. For a dispatched invoice, confirm that all goods have been returned. QUILL issues a credit note, restores the stock at its recorded cost, and includes the credit in reports for the period it was issued. Refunds and partial returns require a separate workflow.
+
+Admins can open a posted purchase receipt and choose **Reverse receipt** to preview the quantity and value to remove. The reversal requires a reason and enough stock and value. It keeps the original receipt and creates linked ledger entries. Enter a replacement receipt for corrected quantities or costs. Posted opening balances require reconciliation with the inventory administrator.
 
 To reverse a production run, enter a reason in the Django Admin production run list and use **Reverse selected posted production runs**. QUILL checks that the finished goods quantity and value can be removed, then writes movements that undo the original entries.
 

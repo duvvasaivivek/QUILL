@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Reverse {{ document.reference }} | QUILL{% endblock %}
+{% block breadcrumbs %}<nav class="quill-breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'purchase_receipt' document.pk %}">{{ document.reference }}</a><span aria-hidden="true">/</span><span aria-current="page">Reverse receipt</span></nav>{% endblock %}
+{% block content %}
+<div class="page-heading"><h1>Reverse {{ document.reference }}</h1></div>
+<section class="panel">
+  <div class="panel-heading"><h2>Stock to remove</h2></div>
+  <div class="table-responsive" tabindex="0" role="region" aria-label="Stock to remove">
+    <table class="table table-striped">
+      <thead><tr><th scope="col">Item</th><th scope="col">Quantity</th><th scope="col">Value (INR)</th></tr></thead>
+      <tbody>{% for movement in movements %}<tr><td>{{ movement.item }}</td><td>{{ movement.quantity }} {{ movement.unit.code }}</td><td>{{ movement.value }}</td></tr>{% empty %}<tr><td colspan="3">No stock entries to reverse.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
+<form method="post" class="panel inventory-editor inventory-correction">
+  {% csrf_token %}{{ form.non_field_errors }}
+  <div class="inventory-fields"><div>{{ form.reason.label_tag }}{{ form.reason }}{{ form.reason.errors }}</div></div>
+  <p class="inventory-hint">QUILL keeps the original receipt and records a separate reversal. Enter a replacement receipt for any stock still received.</p>
+  <div class="inventory-actions"><button class="btn btn-outline-danger">Confirm reversal</button><a href="{% url 'purchase_receipt' document.pk %}">Cancel</a></div>
+</form>
+{% endblock %}

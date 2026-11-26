@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ list_label }} | QUILL{% endblock %}
+{% block breadcrumbs %}{% if not purchase and perms.inventory.view_stockmovement %}<nav class="quill-breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'stock_summary' %}">Stock summary</a><span aria-hidden="true">/</span><span aria-current="page">{{ list_label }}</span></nav>{% endif %}{% endblock %}
+{% block content %}
+<div class="page-heading"><h1>{{ list_label }}</h1>{% if can_create %}<a href="{% url new_url %}" class="btn btn-primary">New {{ label|lower }}</a>{% endif %}</div>
+{% if filters %}{% include "inventory/filters.html" %}{% endif %}
+<div class="panel table-responsive" tabindex="0" role="region" aria-label="{{ list_label }}">
+  <table class="table table-striped">
+    <thead><tr><th scope="col">Reference</th>{% if purchase %}<th scope="col">Supplier</th>{% endif %}<th scope="col">Status</th><th scope="col">{% if purchase %}Created or posted{% else %}Posted on{% endif %}</th></tr></thead>
+    <tbody>
+      {% for document in page %}
+        <tr><td><a href="{% url detail_url document.pk %}">{{ document.reference }}</a></td>{% if purchase %}<td>{{ document.supplier.name }}</td>{% endif %}<td><span class="status-pill" data-status="{% if document.reversal %}reversed{% else %}{{ document.status|lower }}{% endif %}">{% if document.reversal %}Reversed{% else %}{{ document.get_status_display }}{% endif %}</span></td><td>{% if purchase %}{{ document.receipt_date|date:'j M Y'|default:'—' }}{% else %}{{ document.posted_at|date:'j M Y'|default:'—' }}{% endif %}</td></tr>
+      {% empty %}<tr><td colspan="{% if purchase %}4{% else %}3{% endif %}">No {{ list_label|lower }} found.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "inventory/pagination.html" %}
+{% endblock %}

@@ -1,0 +1,7 @@
+<form method="get" class="panel inventory-filters" aria-label="Filters">
+  {{ filters.non_field_errors }}
+  <div class="inventory-fields">
+    {% for field in filters %}<div>{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}
+    <div class="inventory-actions"><button class="btn btn-outline-secondary">Filter</button>{% if request.GET %}<a href="{{ request.path }}">Clear</a>{% endif %}</div>
+  </div>
+</form>

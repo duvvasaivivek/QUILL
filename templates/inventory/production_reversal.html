@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ reversal.reference }} | QUILL{% endblock %}
+{% block content %}
+<div class="page-heading"><h1>{{ reversal.reference }}</h1></div>
+<dl class="panel inventory-metadata">
+  <div><dt>Production run</dt><dd>{% if user.is_staff and perms.production.view_productionrun %}<a href="{% url 'admin:production_productionrun_change' reversal.run_id %}">{{ reversal.run.reference }}</a>{% else %}{{ reversal.run.reference }}{% endif %}</dd></div>
+  <div><dt>Reversed by</dt><dd>{{ reversal.created_by.get_username }}</dd></div>
+  <div><dt>Recorded</dt><dd>{{ reversal.created_at }}</dd></div>
+  <div><dt>Reason</dt><dd>{{ reversal.reason }}</dd></div>
+</dl>
+{% endblock %}

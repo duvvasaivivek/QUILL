@@ -77,7 +77,7 @@ def provision_role_groups() -> dict[str, bool]:
             production_codes = PRODUCTION_VIEW_PERMISSIONS | PRODUCTION_EDIT_PERMISSIONS
             inventory_codes = inventory_codes | {
                 "add_purchasereceipt", "change_purchasereceipt", "add_purchasereceiptline",
-                "change_purchasereceiptline", "view_purchasereceiptline",
+                "change_purchasereceiptline", "view_purchasereceiptline", "delete_purchasereceiptline",
             }
         elif role is Role.AUDITOR:
             production_codes = PRODUCTION_VIEW_PERMISSIONS

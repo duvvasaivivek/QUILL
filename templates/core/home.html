@@ -49,8 +49,8 @@
   {% endif %}
   {% if section == "operations" and destinations.purchases %}
     <section class="panel">
-      <div class="panel-heading"><h2>Purchasing</h2><a href="{% url 'admin:inventory_purchasereceipt_changelist' %}">All receipts</a></div>
-      {% if perms.inventory.add_purchasereceipt %}<div class="panel-body"><a class="btn btn-outline-secondary" href="{% url 'admin:inventory_purchasereceipt_add' %}">Record a receipt</a></div>{% endif %}
+      <div class="panel-heading"><h2>Purchasing</h2><a href="{% url 'purchase_receipts' %}">All receipts</a></div>
+      {% if perms.inventory.add_purchasereceipt and perms.inventory.add_purchasereceiptline %}<div class="panel-body"><a class="btn btn-outline-secondary" href="{% url 'purchase_receipt_new' %}">Record a receipt</a></div>{% endif %}
     </section>
   {% endif %}
 {% elif section == "production" %}
@@ -65,9 +65,9 @@
     {% endif %}
     {% if destinations.purchases %}
       <section class="panel">
-        <div class="panel-heading"><h2>Draft purchase receipts</h2><a href="{% url 'admin:inventory_purchasereceipt_changelist' %}">All receipts</a></div>
+        <div class="panel-heading"><h2>Draft purchase receipts</h2><a href="{% url 'purchase_receipts' %}">All receipts</a></div>
         <ul class="work-list">{% for receipt in draft_receipts %}
-          <li><a href="{% url 'admin:inventory_purchasereceipt_change' receipt.pk %}"><strong>{{ receipt.supplier.name }}</strong><span>{{ receipt.reference }}</span></a><span class="status-pill" data-status="draft">Draft</span></li>
+          <li><a href="{% url 'purchase_receipt' receipt.pk %}"><strong>{{ receipt.supplier.name }}</strong><span>{{ receipt.reference }}</span></a><span class="status-pill" data-status="draft">Draft</span></li>
         {% empty %}<li class="empty-state">No draft receipts.</li>{% endfor %}</ul>
       </section>
     {% endif %}

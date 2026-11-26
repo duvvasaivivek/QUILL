@@ -1,0 +1,12 @@
+<fieldset class="inventory-line" data-line>
+  <legend>Line <span data-line-number>{{ number }}</span></legend>
+  {% for field in row.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
+  {{ row.non_field_errors }}
+  <div class="inventory-fields">
+    <div>{{ row.item.label_tag }}{{ row.item }}{{ row.item.errors }}</div>
+    <div>{{ row.quantity.label_tag }}{{ row.quantity }}{{ row.quantity.errors }}</div>
+    <div><label for="{{ row.unit_cost.id_for_label }}">Unit cost (INR)</label>{{ row.unit_cost }}{{ row.unit_cost.errors }}</div>
+    <div><span class="inventory-field-label">Line value (INR)</span><output data-line-value>—</output></div>
+  </div>
+  {% if can_remove or not row.instance.pk %}<label class="inventory-remove">{{ row.DELETE }} Remove line</label>{% endif %}
+</fieldset>
